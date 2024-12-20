@@ -1,0 +1,22 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./iot-controller";
+
+package iotController;
+
+
+message GetPackageRequest {
+  int32 deviceId = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  int32 someUsefulField = 3;
+}
+
+message PackageResponse {
+  bool success = 1;
+}
+
+
+service IotService {
+  rpc StreamWithAck (stream GetPackageRequest) returns (stream PackageResponse);
+}
