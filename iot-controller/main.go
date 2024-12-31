@@ -1,16 +1,26 @@
 package main
 
 import (
+	"iotController/repository"
+	"iotController/server"
+	"iotController/service"
 	"log"
 	"net"
 
-	"google.golang.org/grpc"
 	pb "iotController/proto"
 
-	entities "iotController/entities"
+	"google.golang.org/grpc"
 )
 
 func main() {
+	conn, err := repository.NewMongoConnection("mongodb://localhost:27017")
+	if err != nil {
+		log.Fatalf("failed to connect to MongoDB: %v", err)
+	}
+	db := repository.NewDataBase(conn, "iot", "messages")
+
+	iotService := service.NewService(db)
+
 	listen, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -18,7 +28,8 @@ func main() {
 	defer listen.Close()
 
 	serv := grpc.NewServer()
-	pb.RegisterIotServiceServer(serv, &entities.Server{})
+	iotServer := server.NewServer(iotService)
+	pb.RegisterIotServiceServer(serv, iotServer)
 
 	log.Printf("server listening at %v", listen.Addr())
 

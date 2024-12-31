@@ -2,42 +2,35 @@ package repository
 
 import (
 	"context"
+	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
-type mongoConnection struct {
+type MongoConnection struct {
 	client *mongo.Client
 }
 
 type DataBase struct {
-	db         *mongo.Database
-	collection *mongo.Collection
+	Collection *mongo.Collection
 }
 
-func New() *mongoConnection {
+func NewMongoConnection(uri string) (*MongoConnection, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, _ := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-
-	return &mongoConnection{
-		client: client,
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
 	}
+
+	return &MongoConnection{client: client}, nil
 }
 
-func InitDatabase(mongo *mongoConnection) (*DataBase, error) {
-	datasDB := mongo.client.Database("iot")
-	collection := datasDB.Collection("messages")
+func NewDataBase(conn *MongoConnection, dbName, collectionName string) *DataBase {
+	db := conn.client.Database(dbName)
+	collection := db.Collection(collectionName)
 
-	return &DataBase{
-		db:         datasDB,
-		collection: collection,
-	}, nil
-}
-
-func GetDBInstance() *DataBase {
-	db := &DataBase{}
-	return db
+	return &DataBase{Collection: collection}
 }
