@@ -5,15 +5,15 @@ import (
 )
 
 type Message struct {
-	deviceID        int
-	timestamp       time.Time
-	someUsefulField int
+	DeviceID        int
+	Timestamp       time.Time
+	SomeUsefulField int
 }
 
 func NewMessage(deviceID int, usefulField int) *Message {
 	return &Message{
-		deviceID:        deviceID,
-		timestamp:       time.Now(),
-		someUsefulField: usefulField,
+		DeviceID:        deviceID,
+		Timestamp:       time.Now(),
+		SomeUsefulField: usefulField,
 	}
 }

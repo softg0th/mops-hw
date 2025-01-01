@@ -47,10 +47,5 @@ func (s *Service) InsertPostsMongoStream(doc entities.Document, success chan<- b
 
 		}
 	}
-
-	if err := changeStream.Err(); err != nil {
-		log.Fatalf("Change stream error: %v", err)
-		success <- false
-	}
 	success <- true
 }

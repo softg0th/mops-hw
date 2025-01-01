@@ -2,17 +2,20 @@ package main
 
 import (
 	"bufio"
-	exceptions "data-simulator/cmd/exceptions"
-	"data-simulator/internal"
 	"data-simulator/internal/enteties"
+	"data-simulator/internal/exceptions"
+	"data-simulator/internal/generator"
+	"data-simulator/internal/network"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func main() {
+	fmt.Println("Initializing connection...")
+	rpc := network.NewRPCConn()
+
 	fmt.Println("Hello world! Input devices count:")
 
 	reader := bufio.NewReader(os.Stdin)
@@ -20,7 +23,7 @@ func main() {
 	countOfDevicesInput = strings.TrimSpace(countOfDevicesInput)
 	countOfDevices, err := strconv.Atoi(countOfDevicesInput)
 	if err != nil {
-		handleError(&exceptions.CMDError{Field: "Device Count", Message: "invalid number format"})
+		exceptions.HandleError(&exceptions.CMDError{Field: "Device Count", Message: "invalid number format"})
 		return
 	}
 
@@ -31,18 +34,12 @@ func main() {
 	frequencyOfMessage, err := strconv.Atoi(frequencyOfMessageInput)
 
 	if err != nil {
-		handleError(&exceptions.CMDError{Field: "Message Frequency", Message: "invalid number format"})
+		exceptions.HandleError(&exceptions.CMDError{Field: "Message Frequency", Message: "invalid number format"})
 		return
 	}
 
 	fmt.Println("Great! Now starting generating payload...")
 
 	payload := enteties.NewPayload(countOfDevices, frequencyOfMessage)
-	internal.StartGeneratingMessages(payload)
-}
-
-func handleError(err error) {
-	fmt.Println(err)
-	time.Sleep(time.Second)
-	os.Exit(1)
+	generator.StartGeneratingMessages(payload, rpc)
 }

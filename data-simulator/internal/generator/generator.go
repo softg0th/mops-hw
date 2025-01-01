@@ -1,21 +1,22 @@
-package internal
+package generator
 
 import (
 	enteties "data-simulator/internal/enteties"
+	"data-simulator/internal/network"
 	"github.com/panjf2000/ants"
 	"math/rand/v2"
 	"sync"
 	"time"
 )
 
-func StartGeneratingMessages(payload *enteties.Payload) {
+func StartGeneratingMessages(payload *enteties.Payload, rpc *network.RPCConn) {
 	defer ants.Release()
 	runTimes := 10000
 	var wg sync.WaitGroup
 
 	runDeviceTask := func() {
 		defer wg.Done()
-		deviceTask(payload.CountOfMessages, 1)
+		deviceTask(payload.CountOfMessages, 1, rpc)
 	}
 
 	for i := 0; i < runTimes; i++ {
@@ -25,8 +26,8 @@ func StartGeneratingMessages(payload *enteties.Payload) {
 	wg.Wait()
 }
 
-func deviceTask(countOfMsg, deviceID int) {
+func deviceTask(countOfMsg, deviceID int, rpc *network.RPCConn) {
 	msg := enteties.NewMessage(deviceID, rand.IntN(100))
-	sendMessage(msg)
+	rpc.StreamRequest(msg)
 	time.Sleep(time.Duration(countOfMsg))
 }
