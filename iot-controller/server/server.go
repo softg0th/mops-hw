@@ -2,15 +2,14 @@ package server
 
 import (
 	pb "iotController/proto"
-	"iotController/service"
+	srv "iotController/service"
 )
 
 type Server struct {
 	pb.UnimplementedIotServiceServer
-	Handler *Handler
+	Service *srv.Service
 }
 
-func NewServer(s *service.Service) *Server {
-	handler := NewHandler(s)
-	return &Server{Handler: handler}
+func NewServer(s *srv.Service) *Server {
+	return &Server{Service: s}
 }

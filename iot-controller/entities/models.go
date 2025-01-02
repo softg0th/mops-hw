@@ -11,16 +11,16 @@ type ObjectID = bsonPrimitive.ObjectID
 
 type Document struct {
 	ID              ObjectID
-	deviceID        int
-	timestamp       time.Time
-	someUsefulField int
+	DeviceID        int
+	Timestamp       time.Time
+	SomeUsefulField int
 }
 
 func NewDocument(deviceID int32, timestamp time.Time, someUsefulField int32) *Document {
 	return &Document{
 		ID:              primitive.NewObjectID(),
-		deviceID:        int(deviceID),
-		timestamp:       timestamp,
-		someUsefulField: int(someUsefulField),
+		DeviceID:        int(deviceID),
+		Timestamp:       timestamp,
+		SomeUsefulField: int(someUsefulField),
 	}
 }

@@ -11,7 +11,6 @@ import (
 
 func StartGeneratingMessages(payload *enteties.Payload, rpc *network.RPCConn) {
 	defer ants.Release()
-	runTimes := 10000
 	var wg sync.WaitGroup
 
 	runDeviceTask := func() {
@@ -19,7 +18,7 @@ func StartGeneratingMessages(payload *enteties.Payload, rpc *network.RPCConn) {
 		deviceTask(payload.CountOfMessages, 1, rpc)
 	}
 
-	for i := 0; i < runTimes; i++ {
+	for i := 0; i < payload.CountOfMessages; i++ {
 		wg.Add(1)
 		_ = ants.Submit(runDeviceTask)
 	}

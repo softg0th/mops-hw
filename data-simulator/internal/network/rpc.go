@@ -33,18 +33,26 @@ func NewRPCConn() *RPCConn {
 }
 
 func (r RPCConn) StreamRequest(message *enteties.Message) {
+	log.Printf("Sending message: DeviceId=%d, Timestamp=%s, SomeUsefulField=%d",
+		message.DeviceID, message.Timestamp, message.SomeUsefulField)
+
 	err := r.stream.Send(&pb.GetPackageRequest{
 		DeviceId:        int32(message.DeviceID),
 		Timestamp:       timestamppb.New(message.Timestamp),
 		SomeUsefulField: int32(message.SomeUsefulField),
 	})
 	if err != nil {
+		log.Printf("Error sending message: %v", err)
 		exceptions.HandleError(&exceptions.CMDError{Field: "Stream message", Message: "could not send message"})
+		return
 	}
 
 	resp, err := r.stream.Recv()
 	if err != nil {
+		log.Printf("Error receiving response: %v", err)
 		exceptions.HandleError(&exceptions.CMDError{Field: "Server response", Message: "server not responding"})
+		return
 	}
-	log.Printf("Received response: %v", resp.Success)
+
+	log.Printf("Received response: Success=%v", resp.Success)
 }
