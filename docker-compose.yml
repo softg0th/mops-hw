@@ -18,8 +18,8 @@ services:
       context: .
       dockerfile: logstash/Dockerfile
     ports:
-      - 9600:9600
-      - 5228:5228
+      - "9600:9600"
+      - "5228:5228"
     environment:
       LOGSTASH_PORT: 5228
       LOGSTASH_INDEX: "test-index"
@@ -50,19 +50,39 @@ services:
       ELASTIC_USERNAME: "elastic"
       ELASTIC_PASSWORD: "elastic"
 
+  mongo:
+    image: mongo:5.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - elk
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   iot-controller:
     container_name: iot-controller
     build:
-      context: .
-      dockerfile: iot-controller/Dockerfile
+      context: ./iot-controller
+      dockerfile: Dockerfile
     depends_on:
       logstash:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
     networks:
       - elk
     environment:
       ELASTIC_HOST: "elasticsearch:9200"
       LOGSTASH_HOST: "logstash:5228"
+      DB_URL: "mongodb://mongo:27017"
+      DB_NAME: "iot"
+      COLLECTION_NAME: "messages"
     ports:
       - "50051:50051"
 
@@ -72,4 +92,6 @@ networks:
 
 volumes:
   esdata:
+    driver: local
+  mongodata:
     driver: local

@@ -15,26 +15,51 @@ func (s *Server) StreamWithAck(stream iot_controller.IotService_StreamWithAckSer
 		if err != nil {
 			if err == io.EOF {
 				s.Service.Logger.Error(map[string]interface{}{
-					"message": err,
+					"message": "End of stream",
 					"error":   true,
 				})
 				return nil
 			}
+			s.Service.Logger.Error(map[string]interface{}{
+				"message": err,
+				"error":   true,
+			})
+			return err
 		}
-		log.Printf("exampllllee")
+		if in == nil {
+			s.Service.Logger.Error(map[string]interface{}{
+				"message": "Received nil input",
+				"error":   true,
+			})
+			return nil
+		}
+
+		log.Printf("pre checking doc")
 		s.Service.Logger.Info(map[string]interface{}{
-			"message":           "Document inserted successfully",
+			"message":           "Document received",
 			"device_id":         in.DeviceId,
 			"timestamp":         in.Timestamp.AsTime().Format(time.RFC3339),
 			"some_useful_field": in.SomeUsefulField,
 		})
 
 		newEntity := entities.NewDocument(in.DeviceId, in.Timestamp.AsTime(), in.SomeUsefulField)
+
 		ctx := context.Background()
 		success := make(chan bool)
-		go s.Service.InsertPostsMongoStream(ctx, *newEntity, success)
 
-		result := <-success
+		go func() {
+			defer close(success)
+			s.Service.InsertPostsMongoStream(ctx, *newEntity, success)
+		}()
+
+		result, ok := <-success
+		if !ok {
+			s.Service.Logger.Error(map[string]interface{}{
+				"message": "Failed to insert document",
+				"error":   true,
+			})
+			return nil
+		}
 
 		err = stream.Send(&iot_controller.PackageResponse{Success: result})
 		if err != nil {

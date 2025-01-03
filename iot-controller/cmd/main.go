@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	logstash_logger "github.com/KaranJagtiani/go-logstash"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
@@ -9,6 +10,7 @@ import (
 	"iotController/internal/repository"
 	"iotController/internal/server"
 	"iotController/internal/service"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -16,6 +18,8 @@ import (
 
 func main() {
 	err := godotenv.Load("/iot-controller/cmd/.env")
+	cwd, _ := os.Getwd()
+	fmt.Println("Current working directory:", cwd)
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "DotEnv", Message: "failed to load env file"})
 		return
@@ -39,10 +43,11 @@ func main() {
 
 	conn, err := repository.NewMongoConnection(dbUrl)
 	if err != nil {
+		log.Printf("connected to mongodb failed with error: %v", err)
 		exceptions.HandleError(&exceptions.CMDError{Field: "Mongo", Message: "failed to connect to MongoDB"})
 		return
 	}
-
+	log.Printf("connected to mongodb successfully")
 	db := repository.NewDataBase(conn, dbName, collectionName)
 	iotService := service.NewService(db, logger)
 	listen, err := net.Listen(grpcProtocol, grpcPort)

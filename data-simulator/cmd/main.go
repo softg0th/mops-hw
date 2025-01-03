@@ -11,12 +11,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
 	err := godotenv.Load("../.env")
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "DotEnv", Message: "failed to load env file"})
+		time.Sleep(100000000000000000)
 		return
 	}
 	fmt.Println("Initializing connection...")
