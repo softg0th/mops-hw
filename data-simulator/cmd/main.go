@@ -7,14 +7,21 @@ import (
 	"data-simulator/internal/generator"
 	"data-simulator/internal/network"
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 	"strings"
 )
 
 func main() {
+	err := godotenv.Load("../.env")
+	if err != nil {
+		exceptions.HandleError(&exceptions.CMDError{Field: "DotEnv", Message: "failed to load env file"})
+		return
+	}
 	fmt.Println("Initializing connection...")
-	rpc := network.NewRPCConn()
+	grpcAddress := os.Getenv("GRPC_ADDRESS")
+	rpc := network.NewRPCConn(grpcAddress)
 
 	fmt.Println("Hello world! Input devices count:")
 

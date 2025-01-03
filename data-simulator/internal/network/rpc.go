@@ -14,8 +14,8 @@ type RPCConn struct {
 	stream pb.IotService_StreamWithAckClient
 }
 
-func NewRPCConn() *RPCConn {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+func NewRPCConn(grpcAddress string) *RPCConn {
+	conn, err := grpc.Dial(grpcAddress, grpc.WithInsecure())
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "Netrwork connection", Message: "could not connect to" +
 			" grpc server"})

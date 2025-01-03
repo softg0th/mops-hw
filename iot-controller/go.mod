@@ -3,6 +3,8 @@ module iotController
 go 1.22.2
 
 require (
+	github.com/KaranJagtiani/go-logstash v1.0.2
+	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.1
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.36.0
