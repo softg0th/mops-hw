@@ -1,11 +1,13 @@
 package main
 
 import (
-	"fmt"
 	logstash_logger "github.com/KaranJagtiani/go-logstash"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 	"iotController/internal/exceptions"
+	infra "iotController/internal/infra"
 	pb "iotController/internal/proto"
 	"iotController/internal/repository"
 	"iotController/internal/server"
@@ -18,8 +20,6 @@ import (
 
 func main() {
 	err := godotenv.Load("/iot-controller/cmd/.env")
-	cwd, _ := os.Getwd()
-	fmt.Println("Current working directory:", cwd)
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "DotEnv", Message: "failed to load env file"})
 		return
@@ -31,6 +31,9 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	collectionName := os.Getenv("COLLECTION_NAME")
 	logstashProtocol := os.Getenv("LOGSTASH_PROTOCOL")
+	// rabbitHost := os.Getenv("RABBIT_HOST")
+	rabbitQueuName := os.Getenv("RABBIT_QUEUE_NAME")
+	prometheusPort := os.Getenv("PROMETHEUS_PORT")
 
 	logstashPort, err := strconv.Atoi(os.Getenv("LOGSTASH_PORT"))
 
@@ -39,17 +42,32 @@ func main() {
 		return
 	}
 
+	rabbitConn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+
+	if err != nil {
+		log.Printf(err.Error())
+		exceptions.HandleError(&exceptions.CMDError{Field: "Rabbit", Message: "failed to connect to RabbitMQ"})
+		return
+	}
+
+	defer rabbitConn.Close()
+
+	rabbitChannel, err := rabbitConn.Channel()
+	newRabbit, err := infra.NewRabbit(rabbitChannel, rabbitQueuName)
+	if err != nil {
+		exceptions.HandleError(&exceptions.CMDError{Field: "Queue", Message: "failed to create rabbit queue"})
+	}
+
 	logger := logstash_logger.Init("logstash", logstashPort, logstashProtocol, 5)
 
 	conn, err := repository.NewMongoConnection(dbUrl)
 	if err != nil {
-		log.Printf("connected to mongodb failed with error: %v", err)
 		exceptions.HandleError(&exceptions.CMDError{Field: "Mongo", Message: "failed to connect to MongoDB"})
 		return
 	}
-	log.Printf("connected to mongodb successfully")
+
 	db := repository.NewDataBase(conn, dbName, collectionName)
-	iotService := service.NewService(db, logger)
+	iotService := service.NewService(db, logger, newRabbit)
 	listen, err := net.Listen(grpcProtocol, grpcPort)
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "GRPC", Message: "failed to connect to GRPC service"})
@@ -60,6 +78,10 @@ func main() {
 	serv := grpc.NewServer()
 	iotServer := server.NewServer(iotService)
 	pb.RegisterIotServiceServer(serv, iotServer)
+
+	prometheus.MustRegister(infra.RequestsTotal)
+	prometheus.MustRegister(infra.RequestDuration)
+	go service.RunMetricServer(iotService, prometheusPort)
 
 	iotService.Logger.Info(map[string]interface{}{
 		"message": "Server listening at",

@@ -5,7 +5,6 @@ import (
 	"io"
 	"iotController/internal/entities"
 	"iotController/internal/proto"
-	"log"
 	"time"
 )
 
@@ -34,7 +33,6 @@ func (s *Server) StreamWithAck(stream iot_controller.IotService_StreamWithAckSer
 			return nil
 		}
 
-		log.Printf("pre checking doc")
 		s.Service.Logger.Info(map[string]interface{}{
 			"message":           "Document received",
 			"device_id":         in.DeviceId,
@@ -45,14 +43,14 @@ func (s *Server) StreamWithAck(stream iot_controller.IotService_StreamWithAckSer
 		newEntity := entities.NewDocument(in.DeviceId, in.Timestamp.AsTime(), in.SomeUsefulField)
 
 		ctx := context.Background()
-		success := make(chan bool)
+		successDB := make(chan bool)
 
 		go func() {
-			defer close(success)
-			s.Service.InsertPostsMongoStream(ctx, *newEntity, success)
+			defer close(successDB)
+			s.Service.InsertPostsMongoStream(ctx, *newEntity, successDB)
 		}()
 
-		result, ok := <-success
+		result, ok := <-successDB
 		if !ok {
 			s.Service.Logger.Error(map[string]interface{}{
 				"message": "Failed to insert document",
@@ -60,6 +58,13 @@ func (s *Server) StreamWithAck(stream iot_controller.IotService_StreamWithAckSer
 			})
 			return nil
 		}
+
+		successRabbitMQ := make(chan bool)
+
+		go func() {
+			defer close(successRabbitMQ)
+			s.Service.PublishToRabbitMQ(map[int]int{newEntity.DeviceID: newEntity.SomeUsefulField}, successRabbitMQ)
+		}()
 
 		err = stream.Send(&iot_controller.PackageResponse{Success: result})
 		if err != nil {

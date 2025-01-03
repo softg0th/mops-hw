@@ -19,5 +19,5 @@ def clear_database(db_configuration):
 
 
 if __name__ == "__main__":
-    config = Config('mongodb://localhost:27017/', 'iot', 'messages')
+    config = Config('mongodb://mongo:27017', 'iot', 'messages')
     clear_database(config)
