@@ -1,13 +1,13 @@
 package enteties
 
 type Payload struct {
-	CountOfDevices  int
-	CountOfMessages int
+	CountOfDevices   int
+	MessageFrequency int
 }
 
 func NewPayload(devices int, messages int) *Payload {
 	return &Payload{
-		CountOfDevices:  devices,
-		CountOfMessages: messages,
+		CountOfDevices:   devices,
+		MessageFrequency: messages,
 	}
 }

@@ -13,20 +13,24 @@ func StartGeneratingMessages(payload *enteties.Payload, rpc *network.RPCConn) {
 	defer ants.Release()
 	var wg sync.WaitGroup
 
-	runDeviceTask := func() {
-		defer wg.Done()
-		deviceTask(payload.CountOfMessages, 1, rpc)
+	runDeviceTask := func(deviceID int) func() {
+		return func() {
+			defer wg.Done()
+			for {
+				deviceTask(payload.MessageFrequency, deviceID, rpc)
+			}
+		}
+	}
+	for i := 0; i < payload.CountOfDevices; i++ {
+		wg.Add(1)
+		_ = ants.Submit(runDeviceTask(i))
 	}
 
-	for i := 0; i < payload.CountOfMessages; i++ {
-		wg.Add(1)
-		_ = ants.Submit(runDeviceTask)
-	}
 	wg.Wait()
 }
 
-func deviceTask(countOfMsg, deviceID int, rpc *network.RPCConn) {
+func deviceTask(frequency int, deviceID int, rpc *network.RPCConn) {
 	msg := enteties.NewMessage(deviceID, rand.IntN(100))
 	rpc.StreamRequest(msg)
-	time.Sleep(time.Duration(countOfMsg))
+	time.Sleep(time.Duration(frequency) * time.Second)
 }
