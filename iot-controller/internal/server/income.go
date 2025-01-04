@@ -63,7 +63,8 @@ func (s *Server) StreamWithAck(stream iot_controller.IotService_StreamWithAckSer
 
 		go func() {
 			defer close(successRabbitMQ)
-			s.Service.PublishToRabbitMQ(map[int]int{newEntity.DeviceID: newEntity.SomeUsefulField}, successRabbitMQ)
+			s.Service.PublishToRabbitMQ(newEntity.DeviceID, newEntity.Timestamp,
+				newEntity.SomeUsefulField, successRabbitMQ)
 		}()
 
 		err = stream.Send(&iot_controller.PackageResponse{Success: result})

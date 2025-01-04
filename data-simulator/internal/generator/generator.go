@@ -32,5 +32,5 @@ func StartGeneratingMessages(payload *enteties.Payload, rpc *network.RPCConn) {
 func deviceTask(frequency int, deviceID int, rpc *network.RPCConn) {
 	msg := enteties.NewMessage(deviceID, rand.IntN(100))
 	rpc.StreamRequest(msg)
-	time.Sleep(time.Duration(frequency) * time.Second)
+	time.Sleep(time.Second / time.Duration(frequency))
 }

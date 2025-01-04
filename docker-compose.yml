@@ -121,6 +121,24 @@ services:
     ports:
       - "50051:50051"
 
+  rule-engine:
+    container_name: rule-engine
+    build:
+      context: ./rule-engine
+      dockerfile: Dockerfile
+    depends_on:
+      logstash:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - default
+    environment:
+      ELASTIC_HOST: "elasticsearch:9200"
+      LOGSTASH_HOST: "logstash:5228"
+    ports:
+      - "8080:8080"
+
 networks:
   default:
     driver: bridge

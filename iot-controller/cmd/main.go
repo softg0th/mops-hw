@@ -12,7 +12,6 @@ import (
 	"iotController/internal/repository"
 	"iotController/internal/server"
 	"iotController/internal/service"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -32,7 +31,7 @@ func main() {
 	collectionName := os.Getenv("COLLECTION_NAME")
 	logstashProtocol := os.Getenv("LOGSTASH_PROTOCOL")
 	// rabbitHost := os.Getenv("RABBIT_HOST")
-	rabbitQueuName := os.Getenv("RABBIT_QUEUE_NAME")
+	rabbitQueueName := os.Getenv("RABBIT_QUEUE_NAME")
 	prometheusPort := os.Getenv("PROMETHEUS_PORT")
 
 	logstashPort, err := strconv.Atoi(os.Getenv("LOGSTASH_PORT"))
@@ -45,7 +44,6 @@ func main() {
 	rabbitConn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 
 	if err != nil {
-		log.Printf(err.Error())
 		exceptions.HandleError(&exceptions.CMDError{Field: "Rabbit", Message: "failed to connect to RabbitMQ"})
 		return
 	}
@@ -53,7 +51,7 @@ func main() {
 	defer rabbitConn.Close()
 
 	rabbitChannel, err := rabbitConn.Channel()
-	newRabbit, err := infra.NewRabbit(rabbitChannel, rabbitQueuName)
+	newRabbit, err := infra.NewRabbit(rabbitChannel, rabbitQueueName)
 	if err != nil {
 		exceptions.HandleError(&exceptions.CMDError{Field: "Queue", Message: "failed to create rabbit queue"})
 	}
@@ -81,6 +79,7 @@ func main() {
 
 	prometheus.MustRegister(infra.RequestsTotal)
 	prometheus.MustRegister(infra.RequestDuration)
+
 	go service.RunMetricServer(iotService, prometheusPort)
 
 	iotService.Logger.Info(map[string]interface{}{
