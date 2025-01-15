@@ -5,19 +5,17 @@ import (
 )
 
 var (
-	RequestsTotal = prometheus.NewCounterVec(
+	RequestsTotal = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "grpc_requests_total",
 			Help: "Total number of requests",
-		},
-		[]string{"method", "status"},
-	)
-	RequestDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "grpc_request_duration_seconds",
-			Help:    "Histogram of request durations",
-			Buckets: prometheus.DefBuckets,
-		},
-		[]string{"method"},
-	)
+		})
+	RequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "grpc_requests_duration",
+		Help: "Requests duration"}, []string{"time"})
+	ErrorsTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "grpc_errors_total",
+			Help: "Total number of errors",
+		})
 )

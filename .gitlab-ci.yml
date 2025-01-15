@@ -1,0 +1,60 @@
+stages:
+  - build
+  - run
+  - security
+  - sast
+  
+
+docker_compose_build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker-compose build
+  only:
+    - main
+
+docker_compose_up:
+  stage: run
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker-compose up -d
+    - docker-compose ps  
+  only:
+    - main
+
+
+run_iot_controller:
+  stage: run
+  image: golang:1.19
+  script:
+    - cd iot-controller/cmd
+    - go run main.go &
+    - sleep 10 
+  only:
+    - main
+
+
+
+gitleaks_scan:
+  stage: security
+  image: zricethezav/gitleaks:latest
+  script:
+    - gitleaks detect --source . --verbose
+  only:
+    - main
+
+sonarqube_scan:
+  stage: sast
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - sonar-scanner \
+        -Dsonar.projectKey=$project_key \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=$SONARQUBE_HOST_URL \
+        -Dsonar.login=$SONAR_TOKEN
+  only:
+    - main

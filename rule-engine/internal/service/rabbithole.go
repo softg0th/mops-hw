@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"ruleEngine/internal/core"
+	"ruleEngine/internal/infra"
 	"time"
 )
 
@@ -76,12 +77,14 @@ func (s *Service) ReadFromRabbitMQ(targetValue int, durationValue int) {
 			select {
 			case instant := <-instantChannel:
 				if instant {
+					infra.InstantRulesTotal.Inc()
 					s.Logger.Info(map[string]interface{}{
 						"message": "Instant match detected",
 					})
 				}
 			case duration := <-durationChannel:
 				if duration {
+					infra.DurationRulesTotal.Inc()
 					s.Logger.Info(map[string]interface{}{
 						"message": "Duration match detected",
 					})

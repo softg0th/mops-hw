@@ -3,8 +3,11 @@ package main
 import (
 	logstash_logger "github.com/KaranJagtiani/go-logstash"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
 	"log"
+	"net/http"
 	"os"
 	"ruleEngine/internal/exceptions"
 	"ruleEngine/internal/infra"
@@ -21,6 +24,7 @@ func main() {
 
 	logstashProtocol := os.Getenv("LOGSTASH_PROTOCOL")
 	rabbitQueueName := os.Getenv("RABBIT_QUEUE_NAME")
+	prometheusPort := os.Getenv("PROMETHEUS_PORT")
 
 	logstashPort, err := strconv.Atoi(os.Getenv("LOGSTASH_PORT"))
 
@@ -52,6 +56,15 @@ func main() {
 
 	ruleService.Logger.Info(map[string]interface{}{
 		"message": "Successfully connected to RabbitMQ"})
+
+	http.Handle("/metrics", promhttp.Handler())
+	prometheus.MustRegister(infra.InstantRulesTotal, infra.DurationRulesTotal)
+	go func() {
+		ruleService.Logger.Error(map[string]interface{}{
+			"message": http.ListenAndServe(prometheusPort, nil),
+			"error":   true,
+		})
+	}()
 
 	ruleService.ReadFromRabbitMQ(5, 10)
 	defer rabbitConn.Close()

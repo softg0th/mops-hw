@@ -1,7 +1,15 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 scrape_configs:
   - job_name: "go_app"
     static_configs:
       - targets: ["host.docker.internal:9090"]
+  - job_name: "iot_controller"
+    static_configs:
+      - targets:
+          - iot-controller:9090
+  - job_name: "rule_engine"
+    static_configs:
+      - targets:
+            - rule-engine:9090

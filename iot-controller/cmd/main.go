@@ -4,6 +4,7 @@ import (
 	logstash_logger "github.com/KaranJagtiani/go-logstash"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 	"iotController/internal/exceptions"
@@ -13,6 +14,7 @@ import (
 	"iotController/internal/server"
 	"iotController/internal/service"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -77,10 +79,14 @@ func main() {
 	iotServer := server.NewServer(iotService)
 	pb.RegisterIotServiceServer(serv, iotServer)
 
-	prometheus.MustRegister(infra.RequestsTotal)
-	prometheus.MustRegister(infra.RequestDuration)
-
-	go service.RunMetricServer(iotService, prometheusPort)
+	http.Handle("/metrics", promhttp.Handler())
+	prometheus.MustRegister(infra.RequestsTotal, infra.RequestDuration, infra.ErrorsTotal)
+	go func() {
+		iotService.Logger.Error(map[string]interface{}{
+			"message": http.ListenAndServe(prometheusPort, nil),
+			"error":   true,
+		})
+	}()
 
 	iotService.Logger.Info(map[string]interface{}{
 		"message": "Server listening at",

@@ -18,8 +18,8 @@ services:
       context: .
       dockerfile: logstash/Dockerfile
     ports:
-      - "9600:9600"
       - "5228:5228"
+      - "9600:9600"
     environment:
       LOGSTASH_PORT: 5228
       LOGSTASH_INDEX: "test-index"
